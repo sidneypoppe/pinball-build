@@ -4,17 +4,15 @@ jobs:
   build:
     runs-on: ubuntu-22.04-arm
     steps:
-      - name: Compilar dentro de Debian 11 (glibc 2.31)
+      - name: Compilar dentro de Ubuntu 20.04 (glibc 2.31)
         run: |
           mkdir -p $PWD/out
-          docker run --rm -v $PWD/out:/out arm64v8/debian:bullseye bash -euxc '
-               sed -i -e "s|deb.debian.org|archive.debian.org|g" -e "s|security.debian.org|archive.debian.org|g" -e "/bullseye-updates/d" /etc/apt/sources.list
-   apt-get -o Acquire::Check-Valid-Until=false update
+          docker run --rm -v $PWD/out:/out -e DEBIAN_FRONTEND=noninteractive arm64v8/ubuntu:20.04 bash -euxc '
+            apt-get update
             apt-get install -y build-essential cmake git libsdl2-dev libsdl2-mixer-dev
             git clone --depth 1 https://github.com/k4zmu2a/SpaceCadetPinball /src
             cd /src
-            cmake -B build -DCMAKE_BUILD_TYPE=Release \
-              -DCMAKE_EXE_LINKER_FLAGS="-static-libstdc++ -static-libgcc"
+            cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXE_LINKER_FLAGS="-static-libstdc++ -static-libgcc"
             cmake --build build -j$(nproc)
             D=/out/spacecadetpinball
             mkdir -p $D/lib
