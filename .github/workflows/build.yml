@@ -1,0 +1,28 @@
+name: build-aarch64
+on: [workflow_dispatch]
+jobs:
+  build:
+    runs-on: ubuntu-22.04-arm
+    steps:
+      - name: Compilar dentro de Debian 11 (glibc 2.31)
+        run: |
+          mkdir -p $PWD/out
+          docker run --rm -v $PWD/out:/out arm64v8/debian:bullseye bash -euxc '
+            apt-get update
+            apt-get install -y build-essential cmake git libsdl2-dev libsdl2-mixer-dev
+            git clone --depth 1 https://github.com/k4zmu2a/SpaceCadetPinball /src
+            cd /src
+            cmake -B build -DCMAKE_BUILD_TYPE=Release \
+              -DCMAKE_EXE_LINKER_FLAGS="-static-libstdc++ -static-libgcc"
+            cmake --build build -j$(nproc)
+            D=/out/spacecadetpinball
+            mkdir -p $D/lib
+            BIN=$(find /src -name SpaceCadetPinball -type f -perm -u+x | head -1)
+            cp "$BIN" $D/SpaceCadetPinball
+            ldd $D/SpaceCadetPinball | awk "/=>/ {print \$3}" | grep -vE "libc\.so|libm\.so|libdl|libpthread|librt|ld-linux|libresolv|libasound|libpulse|libX|libwayland|libdrm|libgbm|libEGL|libGL|libudev|libdbus|libmali" | xargs -r -I{} cp -L {} $D/lib/
+            ldd $D/SpaceCadetPinball > $D/ldd.txt
+          '
+      - uses: actions/upload-artifact@v4
+        with:
+          name: spacecadetpinball-aarch64
+          path: out/spacecadetpinball
