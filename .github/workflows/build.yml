@@ -8,7 +8,8 @@ jobs:
         run: |
           mkdir -p $PWD/out
           docker run --rm -v $PWD/out:/out arm64v8/debian:bullseye bash -euxc '
-            apt-get update
+               sed -i -e "s|deb.debian.org|archive.debian.org|g" -e "s|security.debian.org|archive.debian.org|g" -e "/bullseye-updates/d" /etc/apt/sources.list
+   apt-get -o Acquire::Check-Valid-Until=false update
             apt-get install -y build-essential cmake git libsdl2-dev libsdl2-mixer-dev
             git clone --depth 1 https://github.com/k4zmu2a/SpaceCadetPinball /src
             cd /src
